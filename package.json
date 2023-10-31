@@ -1,0 +1,29 @@
+{
+  "name": "ontoglimpse",
+  "version": "0.0.1",
+  "description": "Conveniently glimpse into an RDF ontology.",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "rdflib": "^2.2.32"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gorczyca/ontoglimpse.js.git"
+  },
+  "keywords": [
+    "ontology",
+    "rdf",
+    "description"
+  ],
+  "author": "Piotr Gorczyca",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gorczyca/ontoglimpse.js/issues"
+  },
+  "homepage": "https://github.com/gorczyca/ontoglimpse.js#readme"
+}
