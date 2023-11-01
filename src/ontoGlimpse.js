@@ -9,6 +9,14 @@ class Entity {
     constructor(node, __og) {
         this.node = node
         this.__og = __og
+
+        this.iri = this.node.value
+
+        let tmpName = this.node.value.split('#').slice(-1)[0]
+        let label = this.__og.storeAny(this.node, RDFS('label'), undefined)
+        let name = (label && this.__og.__formatter.useLabel) ? label : tmpName
+
+        this.name = name
     }
 
     __describeProperty(property) {
