@@ -17,14 +17,17 @@ class Entity {
         let name = (label && this.__og.__formatter.useLabel) ? label : tmpName
 
         this.name = name
+        this.test = 'test'
     }
 
-    __describeProperty(property) {
-        const equiv = this.__og.storeAny(this.node, property, undefined)
-        if (equiv) {
-            return this.__og.entityFactory(equiv).__describe()
-        } else
-            return undefined
+    __describeProperties(property) {
+        const props = this.__og.storeEach(this.node, property, undefined)
+
+        return props.map((p) => this.__og.entityFactory(p).__describe())
+        // if (props.length > 0) {
+        //     return this.__og.entityFactory(equiv).__describe()
+        // } else
+        //     return undefined
     }
 
 
@@ -130,12 +133,12 @@ class Entity {
 
 class Class extends Entity {
     subClassOf() {
-        return this.__describeProperty(OWL('subClassOf'))
+        return this.__describeProperties(OWL('subClassOf'))
     }
 
     
     equivalentClass(lhs = false) {
-        const rhs = this.__describeProperty(OWL('equivalentClass'))
+        const rhs = this.__describeProperties(OWL('equivalentClass'))
         if (!rhs) 
             return undefined // guard
         
@@ -149,13 +152,13 @@ class Class extends Entity {
 
 class ObjectProperty extends Entity {
     subPropertyOf() {
-        return this.__describeProperty(RDFS('subPropertyOf'))
+        return this.__describeProperties(RDFS('subPropertyOf'))
     }
     domain() {
-        return this.__describeProperty(RDFS('domain'))
+        return this.__describeProperties(RDFS('domain'))
     }
     range() {
-        return this.__describeProperty(RDFS('range'))
+        return this.__describeProperties(RDFS('range'))
     }
 }
 
