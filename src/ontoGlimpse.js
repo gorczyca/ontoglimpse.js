@@ -1,7 +1,24 @@
 import { SYMBOLS_DICT } from './symbols.js'
 import { Formatter } from './formatter.js'
-import { OWL, RDF, RDFS } from './namespaces.js'
+import { OWL, RDF, RDFS, DCT, SCHEMA } from './namespaces.js'
 
+// current TODOS:
+//--------------------------
+// 1. refactor: use some nice design pattern
+// 2. allow for language labels - add to formatter or somewhere a language property and try to choose that one
+// 3. allow to use multiple (arrays) of properties so that a name is taken either from FOAF('name') as well as SCHEMA('name') etc
+//      should I use SPARQL here? e.g.
+//        { :book1 dc:title|rdfs:label ?displayString }
+// 4. add unit tests
+// 5. add nice documentation and examples
+//  a) table with format / syntax
+//  b) example with LateX - printing full ontology
+//  c) example with Vue - how can be used to embed in a website using some Front-end framework e.g. Vue
+// 6. implement function to read lists (node.termType = 'Collection', then node.elements is an array)
+// 7. make sense of the disjointness axioms
+// 8. read and extract general rules
+// create a list of supported relations and prefixes etc
+// convert property paths into regular expressions ?
 
 
 class Entity {
@@ -10,18 +27,19 @@ class Entity {
         this.node = node
         this.__og = __og
 
-        this.iri = this.node.value
+        this.iri = this.node?.value
 
-        let tmpName = this.node.value.split('#').slice(-1)[0]
-        let label = this.__og.storeAny(this.node, RDFS('label'), undefined)
-        let name = (label && this.__og.__formatter.useLabel) ? label : tmpName
+        if (this.iri) {
+            let tmpName = this.node.value.split('#').slice(-1)[0]
+            let label = this.__og.storeAny(this.node, RDFS('label'), undefined)
+            let name = (label && this.__og.__formatter.useLabel) ? label : tmpName
 
-        this.name = name
-        this.test = 'test'
+            this.name = name
+        }
     }
 
-    __describeProperties(property) {
-        const props = this.__og.storeEach(this.node, property, undefined)
+    __describeProperties(subject, property, object) {
+        const props = this.__og.storeEach(subject, property, object)
 
         return props.map((p) => this.__og.entityFactory(p).__describe())
         // if (props.length > 0) {
@@ -29,6 +47,26 @@ class Entity {
         // } else
         //     return undefined
     }
+
+
+
+    __dataProperty(subject, property, object) {
+
+        const annotation = this.__og.storeAny(subject, property, object)
+        if (annotation)
+            return annotation.value
+        else
+            return undefined
+    }
+
+
+    dataProperty(property, object) {
+        return this.__dataProperty(this.node, property, object)
+    }
+
+
+
+
 
 
     __formatDescribe() {
@@ -129,19 +167,49 @@ class Entity {
         }
 
     }
+
+    comment() {
+        return this.__dataProperty(this.node, RDFS('comment'), undefined)
+    }
 }
 
 class Class extends Entity {
-    subClassOf() {
-        return this.__describeProperties(OWL('subClassOf'))
+    rangeOf() {
+        return this.__describeProperties(undefined, RDFS('range'), this.node)
     }
 
-    
+    domainOf() {
+        return this.__describeProperties(undefined, RDFS('domain'), this.node)
+    }
+
+    superClassOf() {
+        return this.__describeProperties(undefined, RDFS('subClassOf'), this.node)
+
+    }
+
+    subClassOf(lhs = false) {
+        // debugger
+
+        const rhs = this.__describeProperties(this.node, RDFS('subClassOf'), undefined)
+        if (rhs.length == 0)
+            return [] // guard
+
+        if (lhs) {
+            const operator = SYMBOLS_DICT[this.__og.__formatter.format][this.__og.__formatter.syntax]['subclass']
+            return `${this.__describe()} ${operator} ${rhs}`
+        } else
+            return rhs
+
+    }
+
+
     equivalentClass(lhs = false) {
-        const rhs = this.__describeProperties(OWL('equivalentClass'))
-        if (!rhs) 
-            return undefined // guard
-        
+        // debugger
+
+        const rhs = this.__describeProperties(this.node, OWL('equivalentClass'), undefined)
+        if (rhs.length == 0)
+            return [] // guard
+
         if (lhs) {
             const operator = SYMBOLS_DICT[this.__og.__formatter.format][this.__og.__formatter.syntax]['equivalent']
             return `${this.__describe()} ${operator} ${rhs}`
@@ -152,13 +220,16 @@ class Class extends Entity {
 
 class ObjectProperty extends Entity {
     subPropertyOf() {
-        return this.__describeProperties(RDFS('subPropertyOf'))
+        return this.__describeProperties(this.node, RDFS('subPropertyOf'), undefined)
+    }
+    superPropertyOf() {
+        return this.__describeProperties(undefined, RDFS('subPropertyOf'), this.node)
     }
     domain() {
-        return this.__describeProperties(RDFS('domain'))
+        return this.__describeProperties(this.node, RDFS('domain'), undefined)
     }
     range() {
-        return this.__describeProperties(RDFS('range'))
+        return this.__describeProperties(this.node, RDFS('range'), undefined)
     }
 }
 
@@ -215,6 +286,94 @@ class OntoGlimpse {
     objectProperties() {
         // return this.__store.each(undefined, RDF('type'), OWL('ObjectProperty')).map((c) => EntityFactory.create(c, this.__store))
         return this.storeEach(undefined, RDF('type'), OWL('ObjectProperty')).map((c) => this.entityFactory(c))
+    }
+
+
+    metadata() {
+        let on = this.storeAny(undefined, RDF('type'), OWL('Ontology'))
+        let oe = this.entityFactory(on)
+        
+        // TODO: refactoring necessary
+
+        return ({
+            abstract: oe.dataProperty(DCT('abstract'), undefined),
+            citation: oe.dataProperty(SCHEMA('citation'), undefined),
+            creationDate: oe.dataProperty(DCT('created'), undefined),
+            description: oe.dataProperty(SCHEMA('description'), undefined),
+            funder: oe.dataProperty(SCHEMA('funder'), undefined),
+            funding: oe.dataProperty(SCHEMA('funding'), undefined),
+            // license: oe.dataProperty(SCHEMA('license'), undefined),
+            name: oe.dataProperty(RDFS('label'), undefined),
+            modificationDate: oe.dataProperty(SCHEMA('dateModified'), undefined),
+            title: oe.dataProperty(DCT('title'), undefined),
+            creators: this.personsInfo(on, SCHEMA('creator')),
+            contributors: this.personsInfo(on, SCHEMA('contributor'))
+            // title: oe.dataProperty(DCT('title'), undefined)
+        })
+    }
+
+
+    __affiliationInfo(personNode) {
+
+        let affiliationNode = this.storeAny(personNode, SCHEMA('affiliation'), undefined)
+        if (!affiliationNode)
+            return undefined
+
+        let affiliation = {
+            name: undefined,
+            url: undefined
+        }
+
+        if (typeof affiliationNode === 'object') {
+            // TODO: wrong, check if this its node.termType is Literal or a BlankNode
+            // TODO: then language can be taken from node.language ('de' for German, 'en' for English) 
+            let oe = this.entityFactory(affiliationNode)
+            affiliation.name = oe.dataProperty(SCHEMA('name'), undefined)
+            affiliation.url = oe.dataProperty(SCHEMA('url'), undefined)
+        } else {
+            affiliation = affiliationNode.value
+        }
+
+        return affiliation
+
+    }
+
+    __personInfo(node) {
+
+        let person = {
+            name: undefined,
+            url: undefined,
+            affiliation: undefined,
+
+        }
+
+        if (typeof node === 'object') {
+            // then it is a blank node, possibly with name, url and affilition
+            let oe = this.entityFactory(node)
+            person.name = oe.dataProperty(SCHEMA('name'), undefined)
+            person.url = oe.dataProperty(SCHEMA('url'), undefined)
+            person.affiliation = this.__affiliationInfo(node)
+        } else {
+            // otherwise it is just a string
+            person.name = node.value
+        }
+
+        return person
+
+    }
+
+    personsInfo(node, property) {
+        let nodes = this.storeEach(node, property, undefined)
+
+        return nodes.map((n) => this.__personInfo(n))
+
+
+        // 'BlankNode'
+
+        // return 5
+        // return nodes.map((p) => 
+        //     // it is either a blank node or a data property
+        // ({}))
     }
 
 }
