@@ -299,15 +299,15 @@ class OntoGlimpse {
             abstract: oe.dataProperty(DCT('abstract'), undefined),
             citation: oe.dataProperty(SCHEMA('citation'), undefined),
             creationDate: oe.dataProperty(DCT('created'), undefined),
-            description: oe.dataProperty(SCHEMA('description'), undefined),
+            description: oe.dataProperty(DCT('description'), undefined),
             funder: oe.dataProperty(SCHEMA('funder'), undefined),
             funding: oe.dataProperty(SCHEMA('funding'), undefined),
             // license: oe.dataProperty(SCHEMA('license'), undefined),
             name: oe.dataProperty(RDFS('label'), undefined),
             modificationDate: oe.dataProperty(SCHEMA('dateModified'), undefined),
             title: oe.dataProperty(DCT('title'), undefined),
-            creators: this.personsInfo(on, SCHEMA('creator')),
-            contributors: this.personsInfo(on, SCHEMA('contributor'))
+            creators: this.personsInfo(on, DCT('creator')),
+            contributors: this.personsInfo(on, DCT('contributor'))
             // title: oe.dataProperty(DCT('title'), undefined)
         })
     }
