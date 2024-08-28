@@ -38,6 +38,7 @@ class Entity {
         }
     }
 
+    // TODO: make it more functional
     __describeProperties(subject, property, object) {
         const props = this.__og.storeEach(subject, property, object)
 
@@ -222,6 +223,16 @@ class Class extends Entity {
     }
 }
 
+
+class NamedIndividual extends Entity {
+    classes() {
+
+        const props = this.__og.storeEach(this.node, RDF('type'), undefined).filter((c) => c.value != OWL('NamedIndividual').value)
+        return props.map((p) => this.__og.entityFactory(p).__describe())
+
+    }
+}
+
 class ObjectProperty extends Entity {
     subPropertyOf() {
         return this.__describeProperties(this.node, RDFS('subPropertyOf'), undefined)
@@ -258,6 +269,8 @@ class OntoGlimpse {
             return new Class(node, this)
         else if (this.storeMatch(node, RDF('type'), OWL('ObjectProperty')).length > 0)
             return new ObjectProperty(node, this)
+        else if (this.storeMatch(node, RDF('type'), OWL('NamedIndividual')).length > 0)
+            return new NamedIndividual(node, this)
         else
             // throw new Error('Neither Class nor ObjectProperty')
             return new Entity(node, this)
@@ -284,7 +297,12 @@ class OntoGlimpse {
 
     //
     classes() {
+        // console.log('fetching classes')
         return this.storeEach(undefined, RDF('type'), OWL('Class')).filter((c) => c.termType == 'NamedNode').map((c) => this.entityFactory(c))
+    }
+
+    namedIndividuals() {
+        return this.storeEach(undefined, RDF('type'), OWL('NamedIndividual')).filter((c) => c.termType == 'NamedNode' && c.value != OWL('NamedIndividual')).map((c) => this.entityFactory(c)) 
     }
 
     objectProperties() {
