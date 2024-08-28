@@ -64,6 +64,10 @@ class Entity {
         return this.__dataProperty(this.node, property, object)
     }
 
+    booleanProperty(property, object) {
+        return dataProperty(property, object) === '1' ? true : false
+    }
+
 
 
 
