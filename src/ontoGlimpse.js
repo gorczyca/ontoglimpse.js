@@ -312,7 +312,7 @@ class OntoGlimpse {
             title: oe.dataProperty(DCT('title'), undefined),
             creators: this.personsInfo(on, DCT('creator')),
             contributors: this.personsInfo(on, DCT('contributor')),
-            customSwitch1: oe.dataProperty(ONTOGS('customSwitch1'), undefined)
+            customSwitch1: oe.booleanProperty(ONTOGS('customSwitch1'), undefined)
             // title: oe.dataProperty(DCT('title'), undefined)
         })
     }
