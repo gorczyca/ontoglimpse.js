@@ -1,6 +1,6 @@
 {
   "name": "ontoglimpse",
-  "version": "0.0.123",
+  "version": "0.0.124",
   "description": "Conveniently glimpse into an RDF ontology.",
   "main": "index.js",
   "type": "module",

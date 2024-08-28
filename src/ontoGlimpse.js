@@ -1,6 +1,6 @@
 import { SYMBOLS_DICT } from './symbols.js'
 import { Formatter } from './formatter.js'
-import { OWL, RDF, RDFS, DCT, SCHEMA } from './namespaces.js'
+import { OWL, RDF, RDFS, DCT, SCHEMA, ONTOGS } from './namespaces.js'
 
 // current TODOS:
 //--------------------------
@@ -307,7 +307,8 @@ class OntoGlimpse {
             modificationDate: oe.dataProperty(SCHEMA('dateModified'), undefined),
             title: oe.dataProperty(DCT('title'), undefined),
             creators: this.personsInfo(on, DCT('creator')),
-            contributors: this.personsInfo(on, DCT('contributor'))
+            contributors: this.personsInfo(on, DCT('contributor')),
+            customSwitch1: oe.dataProperty(ONTOGS('customSwitch1'), undefined)
             // title: oe.dataProperty(DCT('title'), undefined)
         })
     }
